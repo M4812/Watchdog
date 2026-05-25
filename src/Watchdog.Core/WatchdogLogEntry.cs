@@ -1,7 +1,17 @@
 namespace Watchdog.Core;
 
-public sealed record WatchdogLogEntry(DateTimeOffset Timestamp, string Message)
+public sealed class WatchdogLogEntry
 {
+    public WatchdogLogEntry(DateTimeOffset timestamp, string message)
+    {
+        Timestamp = timestamp;
+        Message = message;
+    }
+
+    public DateTimeOffset Timestamp { get; }
+
+    public string Message { get; }
+
     public override string ToString()
     {
         return $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message}";

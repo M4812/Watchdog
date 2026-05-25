@@ -1,51 +1,59 @@
 # Watchdog Tool
 
-Watchdog Tool 是一个 Windows 桌面看门狗工具，用于守护指定的 `.exe` 进程。它会按固定间隔检查目标进程状态，在进程退出或带窗口程序无响应时自动拉起或重启，并在界面中保留运行日志。
+Watchdog Tool 是一个 Windows 桌面看门狗工具，用于守护指定的 `.exe` 进程。它会按固定间隔检查目标进程状态，在进程退出、未启动、带窗口程序无响应，或可选的文件夹文件堆积超时时自动启动或重启目标程序，并在界面与本地日志中记录恢复事件。
 
-当前发布版本：`v1.0`
+当前版本：`v1.1`
 
 ## 产品截图
 
-![Watchdog Tool 软件截图](docs/images/watchdog-tool.png)
-
-## 适用场景
-
-- 守护本地业务程序、采集程序、后台任务或简单服务进程。
-- 在没有完整服务管理平台的 Windows 机器上，为关键 EXE 增加自动恢复能力。
-- 需要人工可视化观察守护状态、最近恢复记录和错误日志的桌面环境。
+![Watchdog Tool 截图](docs/images/watchdog-tool.png)
 
 ## 核心功能
 
 - 选择需要监控的 `.exe` 文件。
 - 配置检查间隔和无响应判定时间。
+- 可选启用文件夹堆积监控：指定文件夹内持续存在文件超过设定秒数时，自动重启被监控程序。
 - 手动开始监控、停止监控、立即检查。
-- 目标进程退出后自动重新启动。
-- 带窗口的 GUI 进程无响应时自动结束并重启。
-- 后台或服务器型无窗口进程按运行状态监控，避免误判为无响应。
-- 运行日志按时间、类型、内容分列显示，最多保留 500 条。
+- 目标进程退出或未发现时自动启动。
+- GUI 进程无响应时自动结束并重启。
+- 后台或服务型无窗口进程按运行状态监控。
+- 界面运行日志最多保留 500 条。
+- 恢复类事件会写入程序同级目录 `log\watchdog-yyyyMMdd.log`。
 
-## 运行要求
+## 发布包
 
-- Windows 10、Windows Server 2019 或更新版本。
-- .NET 9 Desktop Runtime。
+v1.1 提供两个 Windows 发布包：
 
-v1.0 默认发布包为框架依赖版本，因此目标机器需要安装 .NET 9 Desktop Runtime。也可以按下方命令自行构建自包含发布包。
+- `Watchdog-v1.1-net9.0-win-x64-self-contained.zip`  
+  .NET 9 自包含版，适合常规 64 位 Windows 环境，不需要额外安装 .NET 9 Runtime。
+
+- `Watchdog-v1.1-net45-win2012r.zip`  
+  .NET Framework 4.5 兼容版，适合已有 .NET Framework 4.5 的 Windows Server 2012 / 2012 R2 环境。
 
 ## 使用方式
 
-1. 下载并解压 v1.0 发布包。
+1. 解压对应发布包。
 2. 打开 `Watchdog.App.exe`。
 3. 点击 `选择 EXE`，选择需要守护的目标程序。
 4. 设置 `检查间隔` 和 `无响应判定`。
-5. 点击 `开始监控`。
-6. 需要调整配置时，先点击 `停止监控`。
+5. 如果需要文件夹堆积触发重启，勾选 `启用文件夹堆积监控`，选择文件夹并设置 `堆积判定` 秒数。
+6. 点击 `开始监控`。
+7. 如需修改配置，先点击 `停止监控`。
 
-## 日志类型
+## 日志说明
 
-- `信息`：正常检查、状态提示。
-- `警告`：进程退出、未发现进程、进程无响应。
-- `恢复`：进程启动或重启成功。
-- `错误`：检查过程出现异常。
+界面日志分为：
+
+- `信息`：正常检查与状态提示。
+- `警告`：未发现进程、进程退出、进程无响应、文件夹堆积。
+- `恢复`：启动或重启成功。
+- `错误`：检查或恢复过程中的异常。
+
+恢复类事件会额外写入本地文件：
+
+```text
+log\watchdog-yyyyMMdd.log
+```
 
 ## 从源码构建
 
@@ -53,19 +61,12 @@ v1.0 默认发布包为框架依赖版本，因此目标机器需要安装 .NET 
 dotnet restore
 dotnet build WatchdogTool.sln
 dotnet test WatchdogTool.sln
-dotnet publish src\Watchdog.App\Watchdog.App.csproj -c Release -r win-x64 --self-contained false -o publish\win-x64
 ```
 
-发布后运行：
+发布 .NET 9 自包含版：
 
 ```powershell
-publish\win-x64\Watchdog.App.exe
-```
-
-构建自包含版本：
-
-```powershell
-dotnet publish src\Watchdog.App\Watchdog.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish\win-x64-self-contained
+dotnet publish src\Watchdog.App\Watchdog.App.csproj -f net9.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish\v1.1-net9.0-win-x64-self-contained
 ```
 
 ## 项目结构
@@ -74,9 +75,3 @@ dotnet publish src\Watchdog.App\Watchdog.App.csproj -c Release -r win-x64 --self
 - `src/Watchdog.Core`：进程监控核心逻辑。
 - `tests/Watchdog.Core.Tests`：核心逻辑测试。
 - `docs/images`：产品截图和文档图片。
-
-## 开发质量
-
-- 使用 `.editorconfig` 统一 C#、项目文件和 Markdown 基础格式。
-- 使用 `.gitattributes` 固定文本文件换行，减少跨平台无意义 diff。
-- 核心监控逻辑包含 MSTest 单元测试。

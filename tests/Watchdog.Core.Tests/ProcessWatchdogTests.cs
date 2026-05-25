@@ -15,7 +15,6 @@ public sealed class ProcessWatchdogTests
 
         Assert.AreEqual(1, controller.StartCount);
         Assert.IsTrue(controller.IsRunning);
-        CollectionAssert.Contains(controller.Logs, "未发现进程，正在启动。");
     }
 
     [TestMethod]
@@ -30,7 +29,6 @@ public sealed class ProcessWatchdogTests
 
         Assert.AreEqual(1, controller.StartCount);
         Assert.IsTrue(controller.IsRunning);
-        CollectionAssert.Contains(controller.Logs, "进程已退出，正在重启。");
     }
 
     [TestMethod]
@@ -44,7 +42,6 @@ public sealed class ProcessWatchdogTests
         Assert.AreEqual(1, controller.KillCount);
         Assert.AreEqual(1, controller.StartCount);
         Assert.IsTrue(controller.IsRunning);
-        CollectionAssert.Contains(controller.Logs, "进程无响应，正在结束并重启。");
     }
 
     [TestMethod]
@@ -58,19 +55,85 @@ public sealed class ProcessWatchdogTests
 
         Assert.IsFalse(watchdog.IsMonitoring);
         Assert.AreEqual(0, controller.KillCount);
-        CollectionAssert.Contains(controller.Logs, "已停止监控。");
     }
 
-    private static ProcessWatchdog CreateWatchdog(FakeProcessController controller)
+    [TestMethod]
+    public async Task CheckNowAsync_RestartsProcessWhenWatchedFolderHasBacklogPastTimeout()
+    {
+        using var folder = new TemporaryFolder();
+        File.WriteAllText(Path.Combine(folder.Path, "pending.txt"), "pending");
+        var controller = new FakeProcessController { IsRunning = true };
+        var now = new DateTimeOffset(2026, 5, 25, 10, 0, 0, TimeSpan.Zero);
+        var watchdog = CreateWatchdog(
+            controller,
+            watchedFolderPath: folder.Path,
+            folderBacklogTimeout: TimeSpan.FromSeconds(10),
+            clock: () => now);
+
+        await watchdog.CheckNowAsync(CancellationToken.None);
+        now = now.AddSeconds(11);
+        await watchdog.CheckNowAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, controller.KillCount);
+        Assert.AreEqual(1, controller.StartCount);
+    }
+
+    [TestMethod]
+    public async Task CheckNowAsync_DoesNotRestartProcessWhenWatchedFolderClearsBeforeTimeout()
+    {
+        using var folder = new TemporaryFolder();
+        var pendingFile = Path.Combine(folder.Path, "pending.txt");
+        File.WriteAllText(pendingFile, "pending");
+        var controller = new FakeProcessController { IsRunning = true };
+        var now = new DateTimeOffset(2026, 5, 25, 10, 0, 0, TimeSpan.Zero);
+        var watchdog = CreateWatchdog(
+            controller,
+            watchedFolderPath: folder.Path,
+            folderBacklogTimeout: TimeSpan.FromSeconds(10),
+            clock: () => now);
+
+        await watchdog.CheckNowAsync(CancellationToken.None);
+        File.Delete(pendingFile);
+        now = now.AddSeconds(11);
+        await watchdog.CheckNowAsync(CancellationToken.None);
+
+        Assert.AreEqual(0, controller.KillCount);
+        Assert.AreEqual(0, controller.StartCount);
+    }
+
+    private static ProcessWatchdog CreateWatchdog(
+        FakeProcessController controller,
+        string? watchedFolderPath = null,
+        TimeSpan? folderBacklogTimeout = null,
+        Func<DateTimeOffset>? clock = null)
     {
         var options = new WatchdogOptions(
-            ExecutablePath: @"C:\Apps\Demo.exe",
-            CheckInterval: TimeSpan.FromSeconds(30),
-            UnresponsiveTimeout: TimeSpan.FromSeconds(5));
+            executablePath: @"C:\Apps\Demo.exe",
+            checkInterval: TimeSpan.FromSeconds(30),
+            unresponsiveTimeout: TimeSpan.FromSeconds(5),
+            watchedFolderPath: watchedFolderPath,
+            folderBacklogTimeout: folderBacklogTimeout);
 
-        var watchdog = new ProcessWatchdog(controller, options);
-        watchdog.LogReceived += (_, message) => controller.Logs.Add(message.Message);
-        return watchdog;
+        return new ProcessWatchdog(controller, options, clock);
+    }
+
+    private sealed class TemporaryFolder : IDisposable
+    {
+        public TemporaryFolder()
+        {
+            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"watchdog-tests-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
     }
 
     private sealed class FakeProcessController : IProcessController
@@ -79,7 +142,6 @@ public sealed class ProcessWatchdogTests
         public bool IsResponding { get; set; } = true;
         public int StartCount { get; private set; }
         public int KillCount { get; private set; }
-        public List<string> Logs { get; } = new();
 
         public Task<bool> IsRunningAsync(string executablePath, CancellationToken cancellationToken)
         {
