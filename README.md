@@ -6,7 +6,7 @@ Watchdog Tool 是一个 Windows 桌面看门狗工具，用于守护指定的 `.
 
 ## 产品截图
 
-![Watchdog Tool 截图](docs/images/watchdog-tool.png)
+![Watchdog Tool 截图](docs/images/watchdog-tool-v1.1.1.png)
 
 ## 核心功能
 
