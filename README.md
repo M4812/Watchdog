@@ -2,7 +2,7 @@
 
 Watchdog Tool 是一个 Windows 桌面看门狗工具，用于守护指定的 `.exe` 进程。它会按固定间隔检查目标进程状态，在进程退出、未启动、带窗口程序无响应，或可选的文件夹文件堆积超时时自动启动或重启目标程序，并在界面与本地日志中记录恢复事件。
 
-当前版本：`v1.1`
+当前版本：`v1.1.1`
 
 ## 产品截图
 
@@ -22,13 +22,10 @@ Watchdog Tool 是一个 Windows 桌面看门狗工具，用于守护指定的 `.
 
 ## 发布包
 
-v1.1 提供两个 Windows 发布包：
+v1.1.1 提供 Windows 发布包：
 
-- `Watchdog-v1.1-net9.0-win-x64-self-contained.zip`  
+- `Watchdog-v1.1.1-net9.0-win-x64-self-contained.zip`  
   .NET 9 自包含版，适合常规 64 位 Windows 环境，不需要额外安装 .NET 9 Runtime。
-
-- `Watchdog-v1.1-net45-win2012r.zip`  
-  .NET Framework 4.5 兼容版，适合已有 .NET Framework 4.5 的 Windows Server 2012 / 2012 R2 环境。
 
 ## 使用方式
 
@@ -66,7 +63,7 @@ dotnet test WatchdogTool.sln
 发布 .NET 9 自包含版：
 
 ```powershell
-dotnet publish src\Watchdog.App\Watchdog.App.csproj -f net9.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish\v1.1-net9.0-win-x64-self-contained
+dotnet publish src\Watchdog.App\Watchdog.App.csproj -f net9.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish\v1.1.1-net9.0-win-x64-self-contained
 ```
 
 ## 项目结构
@@ -74,4 +71,5 @@ dotnet publish src\Watchdog.App\Watchdog.App.csproj -f net9.0-windows -c Release
 - `src/Watchdog.App`：WinForms 桌面应用。
 - `src/Watchdog.Core`：进程监控核心逻辑。
 - `tests/Watchdog.Core.Tests`：核心逻辑测试。
+- `tests/Watchdog.App.Tests`：WinForms 界面布局测试。
 - `docs/images`：产品截图和文档图片。

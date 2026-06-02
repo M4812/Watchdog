@@ -66,7 +66,7 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             RowCount = 2
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 355));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 382));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
@@ -554,11 +554,11 @@ public sealed class MainForm : Form
         _folderBacklogSecondsInput.SetBounds(104, 184, 78, 26);
 
         _statusPanel.SetBounds(Math.Max(0, surface.ClientSize.Width - 124), 184, 104, 28);
-        _startButton.SetBounds(12, 226, 112, 30);
-        _stopButton.SetBounds(136, 226, 112, 30);
-        _checkNowButton.SetBounds(260, 226, 112, 30);
+        _startButton.SetBounds(12, 216, 112, 30);
+        _stopButton.SetBounds(136, 216, 112, 30);
+        _checkNowButton.SetBounds(260, 216, 112, 30);
         _lockHintLabel.Text = "启动后锁定配置";
-        _lockHintLabel.SetBounds(Math.Max(384, surface.ClientSize.Width - 180), 226, 160, 30);
+        _lockHintLabel.SetBounds(Math.Max(384, surface.ClientSize.Width - 180), 216, 160, 30);
     }
 
     private void ConfigureBrowseButton(Button button)
